@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Width of the dashed track-limit line in each viewport gutter. */
+    --gutter-width: 1rem;
+  }
+
+  html {
+    font-family: theme("fontFamily.body");
+    color: theme("colors.off-white");
+    background-color: theme("colors.asphalt");
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: theme("fontFamily.heading");
+  }
+
+  body {
+    min-height: 100vh;
+    /*
+     * CSS-only "racing asphalt" texture: no image asset. A few layered
+     * gradients give a mottled charcoal surface — a soft top-down light,
+     * two off-axis dark blooms, and a fine repeating fleck pattern to
+     * suggest aggregate in the tarmac.
+     */
+    background-color: theme("colors.asphalt");
+    background-image:
+      radial-gradient(
+        ellipse at 50% -10%,
+        rgba(255, 255, 255, 0.05),
+        transparent 55%
+      ),
+      radial-gradient(
+        circle at 15% 20%,
+        rgba(0, 0, 0, 0.5),
+        transparent 40%
+      ),
+      radial-gradient(
+        circle at 85% 75%,
+        rgba(0, 0, 0, 0.55),
+        transparent 45%
+      ),
+      repeating-radial-gradient(
+        circle at 50% 50%,
+        rgba(255, 255, 255, 0.018) 0,
+        rgba(255, 255, 255, 0.018) 1px,
+        transparent 1px,
+        transparent 3px
+      ),
+      repeating-linear-gradient(
+        115deg,
+        rgba(0, 0, 0, 0.14) 0,
+        rgba(0, 0, 0, 0.14) 2px,
+        transparent 2px,
+        transparent 5px
+      );
+    background-attachment: fixed;
+  }
+}
+
+@layer components {
+  /*
+   * Thin white-and-red dashed line hugging the left and right viewport
+   * gutters — evokes a track-limit line. Rendered as fixed pseudo-elements
+   * so it stays put while the page scrolls.
+   */
+  .track-gutters::before,
+  .track-gutters::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: var(--gutter-width);
+    z-index: 40;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      theme("colors.off-white") 0,
+      theme("colors.off-white") 12px,
+      theme("colors.racing-red") 12px,
+      theme("colors.racing-red") 24px
+    );
+    /* Fade the dashes slightly so they read as a detail, not a border. */
+    opacity: 0.85;
+  }
+
+  .track-gutters::before {
+    left: 0;
+  }
+
+  .track-gutters::after {
+    right: 0;
+  }
+}
