@@ -1,0 +1,25 @@
+name: CI
+
+# Plain lint + test gate, independent of the Claude agents. This is what
+# actually blocks a bad PR from being mergeable — set as a required status
+# check in branch protection so a failing build can't be merged regardless
+# of what any agent or reviewer says.
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test

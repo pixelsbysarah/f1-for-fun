@@ -1,0 +1,53 @@
+name: Claude Tester
+
+# Tester agent. Runs after the reviewer, on the same PR events. Checks that
+# changed code has adequate Vitest coverage, writes missing tests, runs the
+# suite, and pushes a commit to the PR branch if it added or fixed tests.
+# Uses Sonnet 5 — sufficient for test-writing against existing patterns.
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+jobs:
+  test:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Follow the project conventions in CLAUDE.md.
+
+            1. Identify the files changed in this pull request.
+            2. Check whether each changed unit of logic (functions, components,
+               API routes) has corresponding Vitest/React Testing Library
+               coverage. Prioritize the scoring engine, the F1 API adapter/
+               sanitization layer, and any auth-related logic — these are the
+               highest-risk areas for silent bugs.
+            3. Write tests for any meaningful gap you find. Don't pad coverage
+               with trivial tests (e.g. snapshotting static markup).
+            4. Run the full test suite (`npm test`) and confirm it passes.
+            5. If you added or modified any test files, commit and push them
+               to this PR's branch. If the suite fails for reasons unrelated
+               to missing tests, leave a comment explaining the failure
+               instead of trying to fix implementation code — that's the
+               implementer agent's job, not yours.
+          claude_args: |
+            --model claude-sonnet-5
+            --allowedTools "Bash(npm test),Bash(npm run test:*),Edit,Write"
+            --max-turns 20
