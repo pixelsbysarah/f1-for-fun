@@ -25,7 +25,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - uses: anthropics/claude-code-action@v1
         with:
@@ -50,4 +50,4 @@ jobs:
           claude_args: |
             --model claude-sonnet-5
             --allowedTools "Bash(npm test),Bash(npm run test:*),Edit,Write"
-            --max-turns 20
+            --max-turns 30

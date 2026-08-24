@@ -48,4 +48,4 @@ jobs:
           claude_args: |
             --model claude-sonnet-5
             --allowedTools "mcp__github_inline_comment__create_inline_comment"
-            --max-turns 15
+            --max-turns 30
