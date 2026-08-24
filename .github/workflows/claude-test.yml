@@ -50,4 +50,4 @@ jobs:
           claude_args: |
             --model claude-sonnet-5
             --allowedTools "Bash(npm test),Bash(npm run test:*),Edit,Write"
-            --max-turns 20
+            --max-turns 30
