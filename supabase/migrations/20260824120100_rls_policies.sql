@@ -42,7 +42,7 @@ create policy "Predictions are viewable by authenticated users"
 
 -- Insert: only your own row, and only with an MFA-verified (aal2) session.
 create policy "Users can insert their own predictions when MFA-verified"
-  on public.predictions
+  on public.predictions as restrictive
   for insert
   to authenticated
   with check (
@@ -55,7 +55,7 @@ create policy "Users can insert their own predictions when MFA-verified"
 -- constrained so a user can neither edit someone else's row nor reassign
 -- ownership to themselves.
 create policy "Users can update their own predictions when MFA-verified"
-  on public.predictions
+  on public.predictions as restrictive
   for update
   to authenticated
   using (

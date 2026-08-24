@@ -1,10 +1,36 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { readSupabaseEnv } from "./env";
 
 /** Paths that require an authenticated session. */
 const PROTECTED_PREFIXES = ["/portal", "/onboarding"];
+
+/** Per-request security context minted by the root middleware. */
+export type SecurityContext = {
+  nonce: string;
+  csp: string;
+};
+
+/**
+ * Clones the request headers and stamps the CSP nonce onto them.
+ *
+ * Both headers are needed: Next parses the nonce out of the request's
+ * `Content-Security-Policy` to apply it to the inline scripts it generates,
+ * and `x-nonce` lets Server Components read it directly if they ever need to
+ * emit their own inline tag.
+ *
+ * Cloned fresh at each call site rather than once up front, because
+ * `request.cookies.set()` mutates the underlying `cookie` header — a snapshot
+ * taken before the Supabase cookie rotation would carry stale cookies into the
+ * response.
+ */
+function headersWithNonce(request: NextRequest, { nonce, csp }: SecurityContext) {
+  const headers = new Headers(request.headers);
+  headers.set("x-nonce", nonce);
+  headers.set("Content-Security-Policy", csp);
+  return headers;
+}
 
 /**
  * Refreshes the Supabase session cookie on every request and performs coarse
@@ -21,8 +47,13 @@ const PROTECTED_PREFIXES = ["/portal", "/onboarding"];
  * `resolveAuthDestination`. RLS is the real security boundary; these redirects
  * are UX so users land on the right step.
  */
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+export async function updateSession(
+  request: NextRequest,
+  security: SecurityContext,
+) {
+  let supabaseResponse = NextResponse.next({
+    request: { headers: headersWithNonce(request, security) },
+  });
 
   const { url, anonKey } = readSupabaseEnv({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -33,11 +64,13 @@ export async function updateSession(request: NextRequest) {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
         cookiesToSet.forEach(({ name, value }) =>
           request.cookies.set(name, value),
         );
-        supabaseResponse = NextResponse.next({ request });
+        supabaseResponse = NextResponse.next({
+          request: { headers: headersWithNonce(request, security) },
+        });
         cookiesToSet.forEach(({ name, value, options }) =>
           supabaseResponse.cookies.set(name, value, options),
         );

@@ -61,7 +61,7 @@ jwt_expiry = 3600
 # Allow/disallow new user signups to your project. Kept true for LOCAL dev so
 # test users can be created; production access control is enforced via RLS and
 # the absence of a signup route in the app (see build-spec.md).
-enable_signup = true
+enable_signup = false
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
@@ -71,9 +71,14 @@ enable_signup = true
 # confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+enable_confirmations = true
 
 # Multi-factor authentication (TOTP). Required for prediction writes per the
 # build spec; enabled here so it can be exercised locally.
 [auth.mfa]
 enabled = true
+max_enrolled_factors = 2
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
