@@ -3,6 +3,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Dashboard } from "@/components/sections/Dashboard";
 import { Hero } from "@/components/sections/Hero";
 import { ScoreSummary } from "@/components/sections/ScoreSummary";
+import { maybeRefreshRaceResults } from "@/lib/f1-adapter";
 
 /**
  * Rendered per-request rather than prerendered at build time.
@@ -16,7 +17,12 @@ import { ScoreSummary } from "@/components/sections/ScoreSummary";
  */
 export const dynamic = "force-dynamic";
 
-export default function Home() {
+export default async function Home() {
+  // Page-load refresh, internally rate-limited to once per 5 minutes and
+  // guaranteed not to throw (see `maybeRefreshRaceResults`). When the gate is
+  // closed this returns immediately without touching the external API.
+  await maybeRefreshRaceResults();
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
