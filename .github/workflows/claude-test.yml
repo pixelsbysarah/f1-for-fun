@@ -26,6 +26,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
+      - run: npm ci
 
       - uses: anthropics/claude-code-action@v1
         with:
@@ -50,4 +52,4 @@ jobs:
           claude_args: |
             --model claude-sonnet-5
             --allowedTools "Bash(npm test),Bash(npm run test:*),Edit,Write"
-            --max-turns 30
+            --max-turns 40
