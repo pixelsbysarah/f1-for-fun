@@ -2,9 +2,9 @@
  * Internal, source-agnostic F1 result types.
  *
  * Nothing outside `lib/f1-adapter` should reference an external API's response
- * shape (CLAUDE.md #6). Every source — Jolpica today, OpenF1 or another
- * tomorrow — translates into these types, so swapping sources is a change
- * confined to this folder.
+ * shape (CLAUDE.md #6). Every source — OpenF1 today, another tomorrow —
+ * translates into these types, so swapping sources is a change confined to
+ * this folder.
  */
 
 /** One driver's line in a race's final classification. */
@@ -31,14 +31,14 @@ export type RaceResult = {
   classification: RaceClassificationEntry[];
   /** Driver code credited with the fastest lap, or null if unavailable. */
   fastestLapDriver: string | null;
-  /** Count of classified non-finishers. */
+  /** Count of classified non-finishers (`dnf === true`; excludes DNS/DSQ). */
   dnfCount: number;
   /**
-   * Whether a red flag occurred. `null` means UNKNOWN — Jolpica/Ergast does
-   * not expose red-flag data, so we record it as unknown rather than guess
-   * (see the ticket). A future source that provides it can fill this in.
+   * Number of Track-scope RED flag events during the race. `null` means
+   * UNKNOWN — results have not been fetched yet. A fetched race with no red
+   * flag stores `0`, not `null`.
    */
-  redFlag: boolean | null;
+  redFlagCount: number | null;
 };
 
 /**
@@ -47,10 +47,17 @@ export type RaceResult = {
  */
 export interface F1DataSource {
   /**
-   * Fetch the final classification for a completed race. Resolves to `null`
-   * when the source has no results for that race yet (e.g. not run, or the
-   * response was malformed and could not be trusted). Rejects on transport
-   * errors (non-OK HTTP status, network failure).
+   * Fetch the final classification for a completed race. `season`/`round` are
+   * the app's own identifiers; `date` is the race's UTC date, used to match
+   * the race to the source's session (OpenF1 has no round number).
+   *
+   * Resolves to `null` when the source has no results for that race yet (not
+   * run, inside a paid live window, or no session matches the date). Rejects
+   * on unexpected transport errors (non-OK HTTP status, network failure).
    */
-  getRaceResults(season: number, round: number): Promise<RaceResult | null>;
+  getRaceResults(request: {
+    season: number;
+    round: number;
+    date: string;
+  }): Promise<RaceResult | null>;
 }

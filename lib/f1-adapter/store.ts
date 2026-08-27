@@ -19,7 +19,16 @@ export type PendingRace = {
   id: string;
   season: number;
   round: number;
+  /** Race date (ISO). Used to match the race to the source's session. */
+  date: string;
 };
+
+/**
+ * Max races fetched per refresh run. OpenF1 costs ~4 requests per race plus one
+ * (memoized) calendar lookup against a published 30 req/min limit, so a backlog
+ * is spread across successive 5-minute cycles rather than bursting the limit.
+ */
+export const MAX_RACES_PER_RUN = 6;
 
 /** Everything the orchestrator needs from persistence — nothing more. */
 export interface RaceResultsStore {
@@ -69,10 +78,18 @@ export async function refreshRaceResults(deps: {
 
   const pending = await deps.store.listRacesNeedingResults(now);
 
+  // Cap per run so a backlog can't burst OpenF1's rate limit; the next cycle
+  // picks up the remainder. The loop is serial, so no other throttle is needed.
+  const batch = pending.slice(0, MAX_RACES_PER_RUN);
+
   let updated = 0;
-  for (const race of pending) {
+  for (const race of batch) {
     try {
-      const result = await deps.source.getRaceResults(race.season, race.round);
+      const result = await deps.source.getRaceResults({
+        season: race.season,
+        round: race.round,
+        date: race.date,
+      });
       if (!result) continue;
       await deps.store.saveRaceResult(race.id, result, now);
       updated += 1;
@@ -131,6 +148,7 @@ export class SupabaseRaceResultsStore implements RaceResultsStore {
       id: row.id as string,
       season: row.season as number,
       round: row.round as number,
+      date: row.race_date as string,
     }));
   }
 
@@ -145,7 +163,7 @@ export class SupabaseRaceResultsStore implements RaceResultsStore {
         result_classification: result.classification,
         fastest_lap_driver: result.fastestLapDriver,
         result_dnf_count: result.dnfCount,
-        red_flag: result.redFlag,
+        red_flag_count: result.redFlagCount,
         results_fetched_at: fetchedAt.toISOString(),
         is_completed: true,
       })

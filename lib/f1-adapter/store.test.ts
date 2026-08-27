@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { REFRESH_INTERVAL_MS } from "./refresh";
 import {
+  MAX_RACES_PER_RUN,
   RACE_RESULTS_RESOURCE,
   refreshRaceResults,
   type PendingRace,
@@ -25,7 +26,7 @@ function fakeResult(season: number, round: number): RaceResult {
     ],
     fastestLapDriver: "VER",
     dnfCount: 0,
-    redFlag: null,
+    redFlagCount: 0,
   };
 }
 
@@ -60,8 +61,8 @@ describe("refreshRaceResults", () => {
 
   it("fetches and stores results for each pending race, then stamps last_fetched", async () => {
     const pending: PendingRace[] = [
-      { id: "race-1", season: 2026, round: 1 },
-      { id: "race-2", season: 2026, round: 2 },
+      { id: "race-1", season: 2026, round: 1, date: "2026-03-08T04:00:00Z" },
+      { id: "race-2", season: 2026, round: 2, date: "2026-03-22T15:00:00Z" },
     ];
     const store = makeStore({
       getLastFetched: vi
@@ -72,14 +73,20 @@ describe("refreshRaceResults", () => {
     const source: F1DataSource = {
       getRaceResults: vi
         .fn()
-        .mockImplementation((season: number, round: number) =>
-          Promise.resolve(fakeResult(season, round)),
+        .mockImplementation((req: { season: number; round: number }) =>
+          Promise.resolve(fakeResult(req.season, req.round)),
         ),
     };
 
     const outcome = await refreshRaceResults({ source, store, now });
 
     expect(outcome).toEqual({ refreshed: true, updated: 2 });
+    // The race date is threaded through to the source for session matching.
+    expect(source.getRaceResults).toHaveBeenCalledWith({
+      season: 2026,
+      round: 1,
+      date: "2026-03-08T04:00:00Z",
+    });
     expect(store.saveRaceResult).toHaveBeenCalledTimes(2);
     expect(store.saveRaceResult).toHaveBeenCalledWith(
       "race-1",
@@ -92,11 +99,42 @@ describe("refreshRaceResults", () => {
     );
   });
 
+  it("processes at most MAX_RACES_PER_RUN races, leaving the rest for later", async () => {
+    const pending: PendingRace[] = Array.from({ length: 10 }, (_, i) => ({
+      id: `race-${i + 1}`,
+      season: 2026,
+      round: i + 1,
+      date: "2026-03-08T04:00:00Z",
+    }));
+    const store = makeStore({
+      getLastFetched: vi
+        .fn()
+        .mockResolvedValue(new Date(now.getTime() - REFRESH_INTERVAL_MS)),
+      listRacesNeedingResults: vi.fn().mockResolvedValue(pending),
+    });
+    const source: F1DataSource = {
+      getRaceResults: vi
+        .fn()
+        .mockImplementation((req: { season: number; round: number }) =>
+          Promise.resolve(fakeResult(req.season, req.round)),
+        ),
+    };
+
+    const outcome = await refreshRaceResults({ source, store, now });
+
+    expect(MAX_RACES_PER_RUN).toBe(6);
+    expect(source.getRaceResults).toHaveBeenCalledTimes(MAX_RACES_PER_RUN);
+    expect(store.saveRaceResult).toHaveBeenCalledTimes(MAX_RACES_PER_RUN);
+    expect(outcome).toEqual({ refreshed: true, updated: MAX_RACES_PER_RUN });
+    // The gate is still stamped so the next cycle picks up the remainder.
+    expect(store.setLastFetched).toHaveBeenCalledOnce();
+  });
+
   it("skips races the source has no results for yet", async () => {
     const store = makeStore({
-      listRacesNeedingResults: vi
-        .fn()
-        .mockResolvedValue([{ id: "race-1", season: 2026, round: 1 }]),
+      listRacesNeedingResults: vi.fn().mockResolvedValue([
+        { id: "race-1", season: 2026, round: 1, date: "2026-03-08T04:00:00Z" },
+      ]),
     });
     const source: F1DataSource = {
       getRaceResults: vi.fn().mockResolvedValue(null),
@@ -113,8 +151,8 @@ describe("refreshRaceResults", () => {
   it("continues past a race whose fetch throws, still stamping last_fetched", async () => {
     const store = makeStore({
       listRacesNeedingResults: vi.fn().mockResolvedValue([
-        { id: "race-1", season: 2026, round: 1 },
-        { id: "race-2", season: 2026, round: 2 },
+        { id: "race-1", season: 2026, round: 1, date: "2026-03-08T04:00:00Z" },
+        { id: "race-2", season: 2026, round: 2, date: "2026-03-22T15:00:00Z" },
       ]),
     });
     const source: F1DataSource = {

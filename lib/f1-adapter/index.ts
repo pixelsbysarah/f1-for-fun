@@ -2,11 +2,11 @@
  * Public surface of the F1 data adapter.
  *
  * The rest of the app imports from here and depends only on the internal types
- * and the {@link F1DataSource} interface — never on Jolpica's response shape
+ * and the {@link F1DataSource} interface — never on OpenF1's response shape
  * (CLAUDE.md #6). Swapping data sources means adding a sibling of
- * `JolpicaF1Source` and changing the one construction site below.
+ * `OpenF1Source` and changing the one construction site below.
  */
-import { JolpicaF1Source } from "./jolpica";
+import { OpenF1Source } from "./openf1";
 import {
   refreshRaceResults,
   SupabaseRaceResultsStore,
@@ -19,7 +19,7 @@ export type {
   RaceResult,
   RaceClassificationEntry,
 } from "./types";
-export { JolpicaF1Source, JOLPICA_BASE_URL } from "./jolpica";
+export { OpenF1Source, OPENF1_BASE_URL } from "./openf1";
 export { shouldRefresh, REFRESH_INTERVAL_MS } from "./refresh";
 export {
   refreshRaceResults,
@@ -33,7 +33,7 @@ export { sanitizeText, toNonNegativeInt } from "./sanitize";
 
 /** The default data source. Swap this line to change providers. */
 export function defaultF1Source(): F1DataSource {
-  return new JolpicaF1Source();
+  return new OpenF1Source();
 }
 
 /**

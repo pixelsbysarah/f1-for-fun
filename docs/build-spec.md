@@ -12,7 +12,7 @@ A personal, two-person F1 prediction tracker for the 2026 season. Not a commerci
 - **Testing:** Vitest + React Testing Library
 - **Linting:** ESLint
 - **Hosting:** Vercel (free tier), auto-deploy from GitHub `main`
-- **Data source:** Jolpica F1 API (Ergast-compatible, free, no auth) — built behind an adapter layer so it can be swapped for OpenF1 or another source later
+- **Data source:** OpenF1 API (openf1.org, free, no auth, CC BY-NC-SA 4.0) — built behind an adapter layer so it can be swapped for Jolpica or another source later
 
 ---
 
@@ -78,11 +78,13 @@ A personal, two-person F1 prediction tracker for the 2026 season. Not a commerci
 ## Technical Details
 
 ### Data Layer
-- Adapter/translation layer between the external F1 API (Jolpica) and the app's internal data shape, so the source API can be swapped with minimal changes elsewhere in the app
+- Adapter/translation layer between the external F1 API (OpenF1) and the app's internal data shape, so the source API can be swapped with minimal changes elsewhere in the app
+- OpenF1 is matched to a race by session date, not round ordinal (it exposes no round number), and composes four per-session endpoints (`session_result`, `laps`, `race_control`, `drivers`) into one internal result. It provides all six scored categories, including the Track-scope RED-flag count that Jolpica/Ergast does not
 - Final race results are fetched, sanitized, and validated before being stored in the database — API responses are not trusted or rendered directly
 - Stored `last_fetched` timestamp (in the DB, not in-memory — required since Vercel serverless functions don't persist memory between requests) drives refresh logic
-- Data refresh triggers on page load, but is rate-limited to once per 5 minutes (since Jolpica doesn't publish an explicit rate limit, this is our own conservative default) to avoid hammering the source API
-- Footer credits the data source (Jolpica F1 / Ergast-compatible API) per its usage terms
+- Data refresh triggers on page load, but is rate-limited to once per 5 minutes to stay well under OpenF1's published 3 req/s, 30 req/min limit; each run also caps the number of races fetched (~4 requests each) so a backlog can't burst the limit in a single run
+- OpenF1's free tier excludes the paid "live" window (30 min before a session start to 30 min after it ends), so a refresh during or just after a race legitimately returns nothing yet — the adapter treats that as "no results yet" and retries on the next cycle, not as an error
+- Footer credits the data source (OpenF1, openf1.org) and carries the CC BY-NC-SA 4.0 non-affiliation disclaimer per its license terms
 
 ### Local Development Environment
 - Supabase CLI + Docker are used for **local development only** — this runs a local Postgres/Auth/Storage stack so changes (including MRs/PRs) can be previewed and tested before merging, without touching the hosted production Supabase project
@@ -150,5 +152,5 @@ Agents run via Claude Code, orchestrated through GitHub Actions on PRs:
 ---
 
 ## Open Items / Notes
-- If Jolpica F1 ever becomes unreliable or shuts down (as Ergast did), the adapter layer means swapping to OpenF1 or another source should only require changes in one place
+- The data source is OpenF1: it supplies all six scored categories (Jolpica/Ergast exposes no red-flag data, leaving that category permanently unscoreable), which is why we swapped off Jolpica. If OpenF1 ever becomes unreliable or shuts down, the adapter layer means swapping to Jolpica or another source should only require changes in one place
 - Two-user model now; schema should stay simple but not preclude adding more users later if you want to expand it

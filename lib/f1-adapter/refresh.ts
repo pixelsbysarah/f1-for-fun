@@ -2,10 +2,12 @@
  * Rate-limited refresh gating.
  *
  * Refresh is triggered on page load but must not hammer the external source.
- * Jolpica publishes no explicit rate limit, so we pick a conservative 5-minute
- * floor between fetches (build spec, "Data Layer"). The decision is a pure
- * function of the persisted `last_fetched` timestamp and the current time, so
- * it is trivially testable and has no hidden clock/state.
+ * OpenF1 publishes a 3 req/s, 30 req/min limit, so a conservative 5-minute
+ * floor between fetches (build spec, "Data Layer") keeps us comfortably under
+ * it even across concurrent serverless invocations; the per-run race cap
+ * (see `MAX_RACES_PER_RUN` in `./store`) bounds the burst within a single run.
+ * The decision is a pure function of the persisted `last_fetched` timestamp
+ * and the current time, so it is trivially testable and has no hidden state.
  */
 
 /** Minimum time between external fetches: 5 minutes. */

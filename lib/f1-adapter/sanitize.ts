@@ -35,7 +35,7 @@ export function sanitizeText(raw: unknown, maxLength = 80): string | null {
 /**
  * Coerce an unknown external value to a non-negative integer.
  *
- * Ergast/Jolpica sends numbers as strings ("1", "18"), so both strings and
+ * Some sources send numbers as strings ("1", "18"), so both strings and
  * numbers are accepted. Anything non-integer, negative, unparseable, or
  * outside the safe-integer range becomes `null`.
  */
