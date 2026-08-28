@@ -1,9 +1,11 @@
 name: Claude Tester
 
-# Tester agent. Runs after the reviewer, on the same PR events. Checks that
-# changed code has adequate Vitest coverage, writes missing tests, runs the
-# suite, and pushes a commit to the PR branch if it added or fixed tests.
-# Uses Sonnet 5 — sufficient for test-writing against existing patterns.
+# Advisory coverage check. Runs after the reviewer, on the same PR events.
+# Runs the real test suite as a plain step (fails the job if tests fail,
+# same as ci.yml). Then Claude inspects changed files for coverage gaps —
+# prioritizing the scoring engine, the F1 API adapter/sanitization layer,
+# and auth-related logic — and posts findings as PR comments, the same way
+# the reviewer does. It does not write or push code.
 
 on:
   pull_request:
@@ -14,8 +16,8 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
+      pull-requests: read
       issues: read
       id-token: write
     steps:
@@ -28,6 +30,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm test
 
       - uses: anthropics/claude-code-action@v1
         with:
@@ -35,21 +38,26 @@ jobs:
           prompt: |
             Follow the project conventions in CLAUDE.md.
 
+            The test suite for this PR already passed (a prior step ran
+            `npm test` and the job would have failed already if it hadn't).
+            Your job is advisory only: assess whether coverage is adequate,
+            not whether the suite is green.
+
             1. Identify the files changed in this pull request.
             2. Check whether each changed unit of logic (functions, components,
                API routes) has corresponding Vitest/React Testing Library
                coverage. Prioritize the scoring engine, the F1 API adapter/
                sanitization layer, and any auth-related logic — these are the
                highest-risk areas for silent bugs.
-            3. Write tests for any meaningful gap you find. Don't pad coverage
-               with trivial tests (e.g. snapshotting static markup).
-            4. Run the full test suite (`npm test`) and confirm it passes.
-            5. If you added or modified any test files, commit and push them
-               to this PR's branch. If the suite fails for reasons unrelated
-               to missing tests, leave a comment explaining the failure
-               instead of trying to fix implementation code — that's the
-               implementer agent's job, not yours.
+            3. Post your findings as inline comments on the specific lines
+               where coverage is missing, or a single summary comment if
+               nothing is missing. Include concrete recommendations (what to
+               test and why), but do not pad the comment with trivia — only
+               flag meaningful gaps.
+            4. Do not write or modify any files, and do not attempt to commit
+               or push anything. If you find a gap, describe it in a comment
+               for a human or the implementer agent to act on.
           claude_args: |
             --model claude-sonnet-5
-            --allowedTools "Bash(npm test),Bash(npm run test:*),Edit,Write"
+            --allowedTools "Read,Grep,Glob,mcp__github_inline_comment__create_inline_comment"
             --max-turns 40
