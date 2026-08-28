@@ -36,6 +36,8 @@ yarn-error.log*
 /supabase/.branches
 /supabase/.temp
 /supabase/.env
+# developer-local seed (e.g. a test user); the config.toml glob picks it up
+/supabase/seed.local.sql
 
 # typescript
 *.tsbuildinfo

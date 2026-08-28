@@ -15,5 +15,12 @@ export const links = {
   portfolio: "https://www.pixelsbysarah.com",
 } as const;
 
-/** Data-source attribution shown in the footer (per Jolpica/Ergast terms). */
-export const dataSourceCredit = "Data via Jolpica F1 (Ergast-compatible API)";
+/** Data-source attribution shown in the footer (per OpenF1's CC BY-NC-SA terms). */
+export const dataSourceCredit = "Data via OpenF1 (openf1.org), CC BY-NC-SA 4.0";
+
+/**
+ * Non-affiliation / non-commercial disclaimer required by OpenF1's
+ * CC BY-NC-SA 4.0 license. Shown in the footer alongside the credit.
+ */
+export const dataSourceDisclaimer =
+  "This is an unofficial, non-commercial project, not associated with or endorsed by Formula 1, OpenF1, or their licensors.";

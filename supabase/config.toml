@@ -30,6 +30,13 @@ shadow_port = 54320
 # database's. Run `SHOW server_version;` on the remote database to check.
 major_version = 15
 
+[db.seed]
+# Seed files loaded by `supabase db reset` / `supabase start`, in order.
+# `seed.local.sql` is a developer's machine-local seed (e.g. a test user) and is
+# gitignored — the `seed.*.sql` glob simply matches nothing on a fresh clone.
+enabled = true
+sql_paths = ["./seed.sql", "./seed.*.sql"]
+
 [studio]
 enabled = true
 # Port to use for Supabase Studio.

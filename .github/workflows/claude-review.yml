@@ -47,5 +47,5 @@ jobs:
             possible, or a single summary comment if you find nothing to flag.
           claude_args: |
             --model claude-sonnet-5
-            --allowedTools "mcp__github_inline_comment__create_inline_comment"
-            --max-turns 40
+            --allowedTools "Read,Grep,Glob,mcp__github_inline_comment__create_inline_comment"
+            --max-turns 60

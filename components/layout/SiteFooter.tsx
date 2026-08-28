@@ -1,4 +1,8 @@
-import { dataSourceCredit, links } from "@/lib/config/content";
+import {
+  dataSourceCredit,
+  dataSourceDisclaimer,
+  links,
+} from "@/lib/config/content";
 
 /** Official GitHub mark (Octicon), inlined as the standard SVG per CLAUDE.md. */
 function GitHubMark() {
@@ -16,14 +20,16 @@ function GitHubMark() {
 }
 
 /**
- * Low-visual-weight footer. Line 1: data-source credit. Line 2: GitHub repo
- * link alongside the portfolio link.
+ * Low-visual-weight footer. Line 1: data-source credit. Line 2: license /
+ * non-affiliation disclaimer. Line 3: GitHub repo link alongside the portfolio
+ * link.
  */
 export function SiteFooter() {
   return (
     <footer className="mt-16 border-t border-white/10">
       <div className="mx-auto max-w-5xl px-6 py-6 text-center text-xs text-off-white/45">
         <p>{dataSourceCredit}</p>
+        <p className="mt-1">{dataSourceDisclaimer}</p>
         <p className="mt-2 flex items-center justify-center gap-4">
           <a
             href={links.github}

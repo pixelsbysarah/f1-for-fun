@@ -29,12 +29,12 @@ portfolio piece. Not a commercial product. Read the full build spec at
    assurance level is `aal2` (MFA-verified) — a password-only session must
    not be able to write.
 5. **External API data is untrusted.** Anything pulled from the F1 data
-   source (Jolpica by default) is sanitized and validated before being
+   source (OpenF1 by default) is sanitized and validated before being
    stored or rendered. Never render raw external API fields directly.
 6. **Keep the data source swappable.** All calls to the external F1 API go
    through the adapter layer (`/lib/f1-adapter` or equivalent) — nothing
-   elsewhere in the app should know or care whether the source is Jolpica,
-   OpenF1, or something else.
+   elsewhere in the app should know or care whether the source is OpenF1,
+   Jolpica, or something else.
 7. **Design tokens stay editable.** Team colors, fonts, and similar design
    values live in a single config file, not scattered inline in components.
 
