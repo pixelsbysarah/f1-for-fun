@@ -100,11 +100,35 @@ migrations without wiping data, use `supabase migration up`. When you change
 the schema, add a new timestamped file with `supabase migration new <name>`
 rather than editing an applied migration.
 
+### Applying migrations to the hosted project
+
+Vercel auto-deploys the app on push to `main`, but it does **not** touch the
+database — migrations are applied to the hosted Supabase project separately.
+Do this after merging a PR that adds a migration, otherwise the deployed app
+runs against a stale schema (symptom: a table that populates locally stays
+empty in production).
+
+```bash
+supabase login                              # one-time, uses a personal access
+                                            # token — never committed
+supabase link --project-ref <project-ref>   # one-time, from the hosted
+                                            # project's dashboard URL
+supabase db push                            # applies pending migrations to
+                                            # the hosted project
+```
+
+`supabase db push` only runs migrations newer than what the remote has already
+recorded, so it is safe to re-run. The access token and project ref are local
+developer credentials / identifiers, not app secrets — they stay out of the
+repo (CLAUDE.md #1). No hosted database password or key belongs in code.
+
 What the migrations create:
 
 - **`races`** — the season calendar (season, round, name, circuit, date,
-  `is_completed`). Public read; the app never writes it (the data adapter in a
-  later ticket writes via the service role).
+  `is_completed`). The calendar rows are seeded by a migration
+  (`20260831120000_seed_race_calendar.sql`); the F1 data adapter later fills in
+  each race's result columns via the service role. Public read; the app itself
+  never writes it.
 - **`predictions`** — one row per (user, race) with P1/P2/P3, fastest-lap
   driver, DNF count, and red-flag count. Readable by any authenticated user
   (for the head-to-head dashboard); a user may insert/update **only their own
