@@ -99,4 +99,21 @@
   .track-gutters::after {
     right: 0;
   }
+
+  /*
+   * Green "correct prediction" tick, drawn purely in CSS (no icon asset, per
+   * the design spec). A short right-angle made from two borders on a rotated
+   * box reads as a checkmark. Sized in `em` so it tracks the adjacent text.
+   */
+  .correct-check {
+    display: inline-block;
+    width: 0.4em;
+    height: 0.7em;
+    margin-left: 0.35em;
+    border-style: solid;
+    border-color: theme("colors.correct-green");
+    border-width: 0 0.14em 0.14em 0;
+    transform: rotate(45deg) translateY(-0.06em);
+    vertical-align: middle;
+  }
 }

@@ -39,6 +39,8 @@ export type {
   HeadToHead,
   PersonEntry,
   PersonSeasonScore,
+  PredictionFields,
+  RaceResult,
   RaceScore,
   ScoredRace,
 } from "./types";
@@ -72,7 +74,7 @@ export const CATEGORY_POINTS = {
  * internal whitespace collapsed. Predictions are free text ("VER", "Max
  * Verstappen"), so this makes the match tolerant of casing/spacing noise.
  */
-function normalizeDriver(value: string | null | undefined): string | null {
+export function normalizeDriver(value: string | null | undefined): string | null {
   if (value == null) return null;
   const normalized = value.trim().toLowerCase().replace(/\s+/g, " ");
   return normalized === "" ? null : normalized;
@@ -83,7 +85,7 @@ function normalizeDriver(value: string | null | undefined): string | null {
  * may store either the short code ("VER") or a name ("Max Verstappen"), so we
  * accept a match on either the entry's driver code or its full name.
  */
-function predictionMatchesEntry(
+export function predictionMatchesEntry(
   predicted: string | null,
   entry: RaceClassificationEntry | null,
 ): boolean {

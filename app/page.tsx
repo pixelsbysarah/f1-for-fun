@@ -3,6 +3,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Dashboard } from "@/components/sections/Dashboard";
 import { Hero } from "@/components/sections/Hero";
 import { ScoreSummary } from "@/components/sections/ScoreSummary";
+import { loadDashboard } from "@/lib/dashboard/load";
 import { maybeRefreshRaceResults } from "@/lib/f1-adapter";
 
 /**
@@ -23,13 +24,17 @@ export default async function Home() {
   // closed this returns immediately without touching the external API.
   await maybeRefreshRaceResults();
 
+  // Assemble the pre-scored public view (predictions are RLS-gated, so this is
+  // read server-side). Never throws — an empty view renders the empty states.
+  const dashboard = await loadDashboard();
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
       <main className="flex-1">
         <Hero />
-        <ScoreSummary />
-        <Dashboard />
+        <ScoreSummary season={dashboard.season} />
+        <Dashboard races={dashboard.races} />
       </main>
       <SiteFooter />
     </div>

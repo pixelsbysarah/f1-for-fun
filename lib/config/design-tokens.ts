@@ -57,3 +57,29 @@ export const teamColors: Record<string, { primary: string; onPrimary: string }> 
   rb: { primary: "#6692ff", onPrimary: "#000000" },
   sauber: { primary: "#52e252", onPrimary: "#000000" },
 } as const;
+
+/**
+ * Maps a constructor/team name (as it appears in sanitized race results) to a
+ * `teamColors` slug. Kept here so the whole name→color mapping stays editable in
+ * one place (CLAUDE.md #7). Matching is case-insensitive substring, evaluated
+ * top-to-bottom — order the more specific aliases first so, e.g., "Red Bull"
+ * resolves before the shorter "RB" fallback.
+ */
+export const constructorAliases: ReadonlyArray<{
+  match: string;
+  slug: keyof typeof teamColors;
+}> = [
+  { match: "mclaren", slug: "mclaren" },
+  { match: "ferrari", slug: "ferrari" },
+  { match: "red bull", slug: "redbull" },
+  { match: "mercedes", slug: "mercedes" },
+  { match: "aston", slug: "astonmartin" },
+  { match: "alpine", slug: "alpine" },
+  { match: "williams", slug: "williams" },
+  { match: "haas", slug: "haas" },
+  { match: "racing bulls", slug: "rb" },
+  { match: "sauber", slug: "sauber" },
+  { match: "audi", slug: "sauber" },
+  { match: "kick", slug: "sauber" },
+  { match: "rb", slug: "rb" },
+];
