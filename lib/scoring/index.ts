@@ -19,10 +19,8 @@
  * Missing prediction (no row for a race): every field displays as `-` and
  *   scores 0, but the race still counts toward the maximum possible points.
  *
- * NOTE: This scheme supersedes the older `1 / 0.5 / 0` podium scheme still
- * described in CLAUDE.md / docs/build-spec.md. The point values live in
- * `PODIUM_POINTS` / `CATEGORY_POINTS` below so they are trivial to retune in
- * one place if the docs are reconciled the other way.
+ * The point values live in `PODIUM_POINTS` / `CATEGORY_POINTS` below
+ * so they are trivial to retune in one place.
  */
 import type { RaceClassificationEntry } from "@/lib/f1-adapter/types";
 import type {

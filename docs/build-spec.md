@@ -30,10 +30,16 @@ A personal, two-person F1 prediction tracker for the 2026 season. Not a commerci
 
 ### Scoring Rules
 - **Non-podium categories** (fastest lap, DNF count, red flags): 1 point correct, 0 incorrect
-- **Podium scoring:**
-  - Correct 3 drivers, wrong order → 0.5 points
-  - Correct 3 drivers, correct order → 1 point
+- **Podium scoring (P1/P2/P3):**
+  - 3 correct drivers, correct order → 4 points
+  - 3 correct drivers, wrong order → 3 points
+  - 2 correct drivers, any order → 2 points
+  - 1 correct driver, any order → 1 point
   - Otherwise → 0 points
+- Because the podium is worth up to 4 and each other category up to 1, the
+  per-race maximum is 7 (or 6 when red-flag data is unavailable), and the
+  season accuracy percentage is deliberately podium-weighted, not an even
+  average across the four categories.
 
 ### Auth & Prediction Portal
 - Username/password login via Supabase Auth
