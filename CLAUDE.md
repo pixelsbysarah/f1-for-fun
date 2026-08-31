@@ -42,10 +42,14 @@ portfolio piece. Not a commercial product. Read the full build spec at
    necessary details like file names, code examples, and solutions where relevant.
 
 ## Scoring rules (implement exactly as specified)
-- Podium (P1/P2/P3): correct 3 drivers + correct order = 1 point; correct 3
-  drivers, wrong order = 0.5 points; otherwise 0.
+- Podium (P1/P2/P3): 3 correct drivers + correct order = 4 points; 3 correct
+  drivers, wrong order = 3 points; 2 correct drivers (any order) = 2 points;
+  1 correct driver (any order) = 1 point; otherwise 0.
 - Fastest lap, DNF count, red flags: 1 point if correct, 0 if not.
 - A missing prediction displays as `-` per field and scores 0.
+- Per-race maximum is 7 (podium 4 + three flat categories), or 6 when
+  red-flag data is unavailable. Season accuracy is total points over that
+  maximum, so it is podium-weighted, not an even category average.
 
 ## Design constraints
 - Fixed dark theme only — no light/dark toggle.
