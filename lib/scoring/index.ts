@@ -123,13 +123,15 @@ export function scorePodium(
     ? [prediction.p1Driver, prediction.p2Driver, prediction.p3Driver]
     : [null, null, null];
 
-  // Order-independent driver matches: each pick counts once if the driver
-  // appears anywhere on the actual podium. Validation guarantees the three
-  // picks are distinct and the podium holds three distinct drivers, so simple
-  // membership counting cannot double-count.
-  const correctDrivers = picks.reduce((count, pick) => {
-    const hit = podium.some((entry) => predictionMatchesEntry(pick, entry));
-    return count + (hit ? 1 : 0);
+  // Order-independent matches: count how many actual podium finishers were
+  // named by *some* pick. Iterating the podium (not the picks) bounds this at
+  // 3 and stays correct even when picks contain duplicates or nulls, or when
+  // the classification is missing a podium slot — this module is tested in
+  // isolation from lib/predictions/validation.ts, so it does not lean on that
+  // layer's distinct-picks guarantee.
+  const correctDrivers = podium.reduce((count, entry) => {
+    const named = picks.some((pick) => predictionMatchesEntry(pick, entry));
+    return count + (named ? 1 : 0);
   }, 0);
 
   // Exact-order: every slot's pick matches the driver in that exact position.

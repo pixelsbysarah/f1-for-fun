@@ -166,6 +166,42 @@ describe("scorePodium", () => {
   });
 });
 
+describe("scorePodium with incomplete or anomalous classification", () => {
+  const fullPick = prediction({
+    p1Driver: "VER",
+    p2Driver: "NOR",
+    p3Driver: "LEC",
+  });
+
+  it("scores 0 without throwing when the classification is empty", () => {
+    const score = scorePodium(fullPick, baseResult({ classification: [] }));
+    expect(score.points).toBe(0);
+    expect(score.correct).toBe(false);
+  });
+
+  it("counts only the podium slots that are present (P3 missing)", () => {
+    const score = scorePodium(
+      fullPick,
+      baseResult({
+        classification: [
+          entry(1, "VER", "Max Verstappen"),
+          entry(2, "NOR", "Lando Norris"),
+        ],
+      }),
+    );
+    expect(score.points).toBe(2); // VER + NOR hit; absent P3 cannot match -> not 3
+    expect(score.correct).toBe(false); // exact-order impossible with a null slot
+  });
+
+  it("does not double-count a driver named in two picks", () => {
+    const score = scorePodium(
+      prediction({ p1Driver: "VER", p2Driver: "VER", p3Driver: "NOR" }),
+      baseResult(),
+    );
+    expect(score.points).toBe(2); // two distinct podium finishers named, not 3
+  });
+});
+
 // ── Fastest lap ───────────────────────────────────────────────────────────────
 
 describe("scoreFastestLap", () => {
