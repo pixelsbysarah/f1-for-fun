@@ -37,6 +37,9 @@ portfolio piece. Not a commercial product. Read the full build spec at
    Jolpica, or something else.
 7. **Design tokens stay editable.** Team colors, fonts, and similar design
    values live in a single config file, not scattered inline in components.
+8. **Clear, concise responses.** Please keep responses and feedback concise yet
+   informative. Skip verbose preambles. Provide direct answers, including 
+   necessary details like file names, code examples, and solutions where relevant.
 
 ## Scoring rules (implement exactly as specified)
 - Podium (P1/P2/P3): correct 3 drivers + correct order = 1 point; correct 3
