@@ -29,7 +29,7 @@
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
-    "daisyui": "^4.12.23",
+    "daisyui": "^5.7.20",
     "eslint": "^9.19.0",
     "eslint-config-next": "^15.1.6",
     "jsdom": "^26.0.0",
