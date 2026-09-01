@@ -120,7 +120,7 @@ supabase db push                            # applies pending migrations to
 `supabase db push` only runs migrations newer than what the remote has already
 recorded, so it is safe to re-run. The access token and project ref are local
 developer credentials / identifiers, not app secrets — they stay out of the
-repo (CLAUDE.md #1). No hosted database password or key belongs in code.
+repo. No hosted database password or key belongs in code.
 
 What the migrations create:
 
@@ -173,6 +173,27 @@ challenge** (`/login/mfa`) before the session reaches `aal2`. Writing
 predictions requires `aal2`, enforced at the database by RLS — MFA is
 mandatory for writes, not optional.
 
+### Local dev: seeded users & MFA codes
+
+Use a local seed (`supabase/seed.local.sql`, which is gitignored) to create two ready-to-use players, each with a permanent password **and a pre-verified TOTP factor**, so you don't have to click through enrollment after every `supabase db reset`:
+
+Both local factors will share one throwaway secret. You still pass
+the MFA challenge at `/login/mfa` on each login — generate the current 6-digit
+code with [oath-toolkit](https://www.nongnu.org/oath-toolkit/):
+
+```bash
+brew install oath-toolkit
+oathtool --totp -b [throwaway-secret]   # prints the code for the next 30s window
+```
+
+Paste it into the challenge screen; the session steps up to `aal2` and
+prediction writes are allowed. Codes rotate every 30 seconds — if one is
+rejected, wait for the next. Any authenticator app works too: add the secret
+manually (local GoTrue stores it unencrypted, so the codes match).
+
+These are local-only throwaways; real accounts enroll a real device and no
+credentials or secrets are committed.
+
 Sessions are stored in **httpOnly, secure cookies** via `@supabase/ssr` (not
 localStorage/sessionStorage), keeping tokens out of reach of client-side
 JavaScript.
@@ -199,6 +220,8 @@ supabase/
   config.toml        Local dev stack config
   migrations/        Schema + RLS (applied via `supabase db reset`)
   seed.sql           Sample 2026 races for local dev
+  seed.local.sql     Gitignored: local test users + pre-verified MFA factor
+                     + prediction/result fixtures (per-developer, never merged)
 ```
 
 Design tokens (team colors, fonts) and site copy live under `lib/config/` so
