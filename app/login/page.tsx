@@ -30,8 +30,7 @@ export default async function LoginPage() {
         Sign in
       </h1>
       <p className="mt-2 text-sm text-off-white/70">
-        Prediction access is invite-only. Accounts are created manually — there
-        is no public sign-up.
+        Prediction access is invite-only.
       </p>
       <LoginForm />
     </main>

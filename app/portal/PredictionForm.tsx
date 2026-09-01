@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckCircleIcon, PencilSquareIcon } from "@heroicons/react/24/outline";
 import { useState, useTransition } from "react";
 
 import type { PredictionFields, Race } from "@/lib/predictions/types";
@@ -62,6 +63,8 @@ export function PredictionForm({
     });
   }
 
+  const hasExisting = initial != null;
+
   const driverFields: Array<{ name: keyof typeof fields; label: string }> = [
     { name: "p1Driver", label: "P1" },
     { name: "p2Driver", label: "P2" },
@@ -75,7 +78,13 @@ export function PredictionForm({
       className="rounded-lg border border-off-white/10 bg-asphalt-highlight/60 p-5"
     >
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-heading text-lg font-bold text-off-white">
+        <h2 className="flex items-center gap-2 font-heading text-lg font-bold text-off-white">
+          {hasExisting && (
+            <PencilSquareIcon
+              className="h-4 w-4 shrink-0 text-off-white/50"
+              aria-hidden="true"
+            />
+          )}
           {race.name}
         </h2>
         <span className="text-xs text-off-white/50">Round {race.round}</span>
@@ -145,15 +154,19 @@ export function PredictionForm({
         </p>
       )}
       {status === "saved" && (
-        <p className="mt-3 text-sm text-correct-green">Saved.</p>
+        <p className="mt-3 flex items-center gap-1.5 text-sm text-correct-green">
+          <CheckCircleIcon className="h-4 w-4" aria-hidden="true" />
+          Saved.
+        </p>
       )}
 
       <button
         type="submit"
         disabled={pending}
-        className="mt-4 rounded bg-racing-red px-4 py-2 text-sm font-semibold text-off-white disabled:opacity-60"
+        className="mt-4 inline-flex items-center gap-2 rounded bg-racing-red px-4 py-2 text-sm font-semibold text-off-white transition-colors hover:bg-racing-red/90 disabled:opacity-60"
       >
-        {pending ? "Saving…" : "Save prediction"}
+        <CheckCircleIcon className="h-4 w-4" aria-hidden="true" />
+        {pending ? "Saving…" : hasExisting ? "Update prediction" : "Save prediction"}
       </button>
     </form>
   );

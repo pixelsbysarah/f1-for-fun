@@ -84,9 +84,9 @@
     background-image: repeating-linear-gradient(
       to bottom,
       theme("colors.off-white") 0,
-      theme("colors.off-white") 12px,
-      theme("colors.racing-red") 12px,
-      theme("colors.racing-red") 24px
+      theme("colors.off-white") 35px,
+      theme("colors.racing-red") 35px,
+      theme("colors.racing-red") 70px
     );
     /* Fade the dashes slightly so they read as a detail, not a border. */
     opacity: 0.85;
@@ -98,5 +98,22 @@
 
   .track-gutters::after {
     right: 0;
+  }
+
+  /*
+   * Green "correct prediction" tick, drawn purely in CSS (no icon asset, per
+   * the design spec). A short right-angle made from two borders on a rotated
+   * box reads as a checkmark. Sized in `em` so it tracks the adjacent text.
+   */
+  .correct-check {
+    display: inline-block;
+    width: 0.4em;
+    height: 0.7em;
+    margin-left: 0.35em;
+    border-style: solid;
+    border-color: theme("colors.correct-green");
+    border-width: 0 0.14em 0.14em 0;
+    transform: rotate(45deg) translateY(-0.06em);
+    vertical-align: middle;
   }
 }
