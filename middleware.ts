@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 
+import { recordSessionRefresh } from "@/lib/metrics/otel";
 import {
   buildContentSecurityPolicy,
   generateNonce,
@@ -19,6 +20,10 @@ import { updateSession } from "@/lib/supabase/middleware";
  *
  * The CSP is then set on whatever response comes back — including the redirect
  * responses `updateSession` returns for unauthenticated visitors.
+ *
+ * Also times step 2 and records it via `recordSessionRefresh` — see
+ * `lib/metrics/otel.ts` for why that's a span attribute rather than a metric
+ * (this runs on the Edge runtime, which has no metrics exporter configured).
  */
 export async function middleware(request: NextRequest) {
   const nonce = generateNonce();
@@ -33,9 +38,50 @@ export async function middleware(request: NextRequest) {
     isDev: process.env.NODE_ENV !== "production",
   });
 
-  const response = await updateSession(request, { nonce, csp });
+  const sessionRefreshStarted = performance.now();
+  let response;
+  try {
+    response = await updateSession(request, { nonce, csp });
+  } catch (error) {
+    recordSessionRefreshSafely({
+      durationMs: performance.now() - sessionRefreshStarted,
+      outcome: "error",
+      authenticated: false,
+    });
+    throw error;
+  }
+
+  // `updateSession` only ever redirects for the unauthenticated-visitor-on-a-
+  // protected-route case (see its own doc comment) — a cheap way to label
+  // this timing by whether the visitor had a session, without threading that
+  // detail out of the auth helper just for a metrics label.
+  const authenticated = !(
+    response.status === 307 &&
+    response.headers.get("location")?.includes("/login")
+  );
+  recordSessionRefreshSafely({
+    durationMs: performance.now() - sessionRefreshStarted,
+    outcome: "ok",
+    authenticated,
+  });
+
   response.headers.set("Content-Security-Policy", csp);
   return response;
+}
+
+/**
+ * `recordSessionRefresh` should never throw (it only touches OTel span
+ * attributes), but middleware sits in front of every request in the app — a
+ * bug in instrumentation must never be able to take it down. Belt and braces.
+ */
+function recordSessionRefreshSafely(
+  args: Parameters<typeof recordSessionRefresh>[0],
+) {
+  try {
+    recordSessionRefresh(args);
+  } catch (error) {
+    console.error("recordSessionRefresh failed:", error);
+  }
 }
 
 export const config = {
