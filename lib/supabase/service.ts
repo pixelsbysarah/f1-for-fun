@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+import { instrumentSupabase } from "@/lib/metrics/supabase";
+
 /**
  * Service-role Supabase client — SERVER ONLY.
  *
@@ -13,6 +15,10 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  *
  * Distinct from `lib/supabase/env.ts`, which deliberately reads only the public
  * URL/anon key and never the service-role key.
+ *
+ * Wrapped with `instrumentSupabase` so every `.from(...)` call made through
+ * this client (the dashboard loader, the F1 result store) is timed — see
+ * `lib/metrics/supabase.ts`.
  */
 export function createServiceClient(
   env: Record<string, string | undefined> = process.env,
@@ -35,7 +41,9 @@ export function createServiceClient(
   }
 
   // No session persistence/refresh: this is a stateless server-side client.
-  return createClient(url, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  return instrumentSupabase(
+    createClient(url, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    }),
+  );
 }

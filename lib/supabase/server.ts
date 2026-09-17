@@ -1,6 +1,8 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+import { instrumentSupabase } from "@/lib/metrics/supabase";
+
 import { readSupabaseEnv } from "./env";
 
 /**
@@ -10,6 +12,12 @@ import { readSupabaseEnv } from "./env";
  * Reads/writes the session from the request cookies via `@supabase/ssr`, so
  * the same httpOnly cookie session is shared with the browser client. A new
  * client is created per request because `cookies()` is request-scoped.
+ *
+ * Wrapped with `instrumentSupabase` so every `.from(...)` call made through
+ * this client (the portal page/actions) is timed automatically — see
+ * `lib/metrics/supabase.ts`. This runs server-side only, which is required:
+ * the metrics it records only export on the Node runtime (see
+ * `instrumentation.ts`).
  */
 export async function createClient() {
   const cookieStore = await cookies();
@@ -18,7 +26,7 @@ export async function createClient() {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   });
 
-  return createServerClient(url, anonKey, {
+  return instrumentSupabase(createServerClient(url, anonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -36,5 +44,5 @@ export async function createClient() {
         }
       },
     },
-  });
+  }));
 }

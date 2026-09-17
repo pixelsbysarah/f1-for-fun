@@ -1,0 +1,58 @@
+# Config for the local otel-collector service (see docker-compose.yml).
+# Two jobs: turn trace spans into RED metrics (spanmetrics connector), and
+# expose all metrics — those and the app's own custom histograms — for
+# Prometheus to scrape.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: 200
+  batch:
+    timeout: 5s
+
+connectors:
+  # Derives request-rate and latency metrics from the trace spans Next emits
+  # automatically for every request (via @vercel/otel + instrumentation.ts) —
+  # this is how "request rate" and "p95 latency" reach Prometheus with zero
+  # instrumentation code in middleware.ts or any route. See OBSERVABILITY.md
+  # for why this is preferred over timing middleware directly.
+  span_metrics:
+    namespace: traces.spanmetrics
+    dimensions:
+      # Only the root HTTP request span carries this — internal spans (fetch
+      # calls, render steps, middleware) don't, so filter on it being present
+      # (`http_route!=""`) in PromQL to isolate real request-rate/latency
+      # series from the rest of what Next's auto-instrumentation emits.
+      - name: http.route
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    resource_to_telemetry_conversion:
+      enabled: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      # The connector is this pipeline's "exporter" — it consumes the spans
+      # and produces metrics for the pipeline below, rather than storing the
+      # traces anywhere. This local stack is metrics-only; full traces are
+      # only kept in Grafana Cloud (Mode A) — see OBSERVABILITY.md.
+      exporters: [span_metrics]
+    metrics:
+      # Two sources feed one pipeline: spans-turned-into-metrics from the
+      # connector above, and the app's own custom OTLP metrics
+      # (db.client.operation.duration) arriving directly over otlp.
+      receivers: [otlp, span_metrics]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus]

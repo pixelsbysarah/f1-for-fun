@@ -1,0 +1,62 @@
+# Local, offline observability stack for f1-for-fun — dev only.
+#
+# This is entirely separate from the Next.js app: it's not referenced by
+# `next build`, `package.json` scripts, or any deploy config. Run it only
+# when you want to look at telemetry without a Grafana Cloud account (see
+# "Mode B" in ../OBSERVABILITY.md).
+#
+#   App (instrumentation.ts) --OTLP--> otel-collector --> Prometheus <-- Grafana
+#
+# The collector plays two roles in one pipeline: it turns the trace spans
+# Next emits automatically (via @vercel/otel) into request-rate/latency
+# metrics using the `spanmetrics` connector, and it exposes both those and
+# the app's own custom metrics (`db.client.operation.duration`) on a
+# Prometheus-scrapeable endpoint. See otel-collector-config.yaml.
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.160.0
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "127.0.0.1:4317:4317" # OTLP gRPC (unused by this app, exposed for completeness)
+      - "127.0.0.1:4318:4318" # OTLP HTTP — point OTEL_EXPORTER_OTLP_ENDPOINT here
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.13.3
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d" # dev/demo — no need for longer
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.0.9
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    environment:
+      # Local-only demo, never exposed beyond localhost — anonymous
+      # admin login trades away auth for zero-friction "docker compose up
+      # and immediately see the dashboard". Do not do this for anything
+      # reachable off your machine.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    ports:
+      - "127.0.0.1:3001:3000" # 3000 is the Next.js app; Grafana takes 3001 locally
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:

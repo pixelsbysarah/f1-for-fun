@@ -214,8 +214,12 @@ lib/
   supabase/          Browser/server/middleware Supabase clients + env
   auth/              Auth-state reading + routing logic
   predictions/       Prediction types + input validation
+  metrics/           OpenTelemetry instruments + the Supabase-client wrapper
   fonts.ts           Google Font loaders (swappable)
 middleware.ts        Session refresh + protected-route guard
+instrumentation.ts   OpenTelemetry SDK bootstrap (see OBSERVABILITY.md)
+observability/       Local Prometheus/Grafana Docker stack — dev/demo only,
+                     not part of the app build
 supabase/
   config.toml        Local dev stack config
   migrations/        Schema + RLS (applied via `supabase db reset`)
@@ -226,3 +230,11 @@ supabase/
 
 Design tokens (team colors, fonts) and site copy live under `lib/config/` so
 they stay editable in one place per CLAUDE.md.
+
+## Observability
+
+Request/latency and Supabase-query metrics via OpenTelemetry, viewable in
+Grafana. Wired up in production (Vercel env vars); locally it's off unless
+you configure an OTLP endpoint, and the app behaves identically either way.
+See [`OBSERVABILITY.md`](./OBSERVABILITY.md) for what's instrumented and how
+to run the local Docker stack.
